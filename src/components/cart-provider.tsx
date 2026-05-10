@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { CartItem, Product, ProductColor } from "@/types";
 import { CartDrawer } from "./cart-drawer";
+import { useToast } from "./toast-provider";
 
 interface CartContextType {
   items: CartItem[];
@@ -25,6 +26,7 @@ export function useCart() {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const { showToast } = useToast();
 
   const addItem = useCallback(
     (product: Product, color: ProductColor, size: number) => {
@@ -42,9 +44,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
         return [...prev, { product, color, size, quantity: 1 }];
       });
+      showToast(`Added to cart: ${product.name}`, "cart");
       setIsOpen(true);
     },
-    []
+    [showToast]
   );
 
   const removeItem = useCallback((index: number) => {

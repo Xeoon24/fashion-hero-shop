@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { Product, ProductColor } from "@/types";
 import { StarIcon } from "@/components/icons";
@@ -9,6 +9,7 @@ import { SizeSelector } from "@/components/size-selector";
 import { useCart } from "@/components/cart-provider";
 import { WishlistButton } from "@/components/wishlist-button";
 import { getSellerById } from "@/data/sellers";
+import { cn } from "@/lib/utils";
 
 interface ProductInfoProps {
   product: Product;
@@ -58,7 +59,20 @@ function getEstimatedDelivery(): string {
 export function ProductInfo({ product }: ProductInfoProps) {
   const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const addToCartButtonRef = useRef<HTMLButtonElement>(null);
   const { addItem } = useCart();
+
+  useEffect(() => {
+    const button = addToCartButtonRef.current;
+    if (!button) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(button);
+    return () => observer.disconnect();
+  }, []);
 
   const stock = useMemo(() => getStockInfo(product.id), [product.id]);
   const seller = getSellerById(product.sellerId);
@@ -82,6 +96,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   }
 
   return (
+    <>
     <div className="flex flex-col gap-5">
       {/* Breadcrumb — subtle */}
       <nav className="flex items-center gap-1.5 text-[11px] text-warm-gray/70">
@@ -102,7 +117,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           <h1 className="text-2xl md:text-3xl font-normal text-charcoal mb-2">
             {product.name}
           </h1>
-          <WishlistButton productId={product.id} className="mt-1 flex-shrink-0" />
+          <WishlistButton productId={product.id} productName={product.name} className="mt-1 flex-shrink-0" />
         </div>
         <StarRating rating={product.rating} count={product.reviewCount} />
         {seller && (
@@ -165,6 +180,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
       {/* Add to cart — prominent dark button */}
       <button
+        ref={addToCartButtonRef}
         onClick={handleAddToCart}
         disabled={!selectedSize}
         className="w-full py-4 bg-charcoal text-white text-[12px] font-medium uppercase tracking-[0.6px] rounded-full hover:bg-charcoal-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
@@ -185,5 +201,29 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </p>
       </div>
     </div>
+
+    {/* Sticky "Add to Cart" bar — mobile only, slides up when main CTA scrolls out of view */}
+    <div
+      className={cn(
+        "fixed bottom-0 inset-x-0 z-50 md:hidden bg-white border-t border-border px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]",
+        "transition-transform duration-300 ease-out",
+        showStickyBar ? "translate-y-0" : "translate-y-full"
+      )}
+    >
+      <div className="flex items-center gap-3 max-w-sm mx-auto">
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-medium text-charcoal truncate">{product.name}</p>
+          <p className="text-[12px] text-warm-gray">{product.price} zł</p>
+        </div>
+        <button
+          onClick={handleAddToCart}
+          disabled={!selectedSize}
+          className="flex-shrink-0 px-5 py-2.5 bg-charcoal text-white text-[11px] font-medium uppercase tracking-[0.6px] rounded-full hover:bg-charcoal-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          {selectedSize ? "Add to Cart" : "Select Size"}
+        </button>
+      </div>
+    </div>
+    </>
   );
 }

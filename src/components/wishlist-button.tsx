@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { HeartIcon, HeartFilledIcon } from "./icons";
 import { useWishlist } from "./wishlist-provider";
+import { useToast } from "./toast-provider";
 import { cn } from "@/lib/utils";
 
 interface WishlistButtonProps {
   productId: string;
+  productName?: string;
   className?: string;
 }
 
-export function WishlistButton({ productId, className }: WishlistButtonProps) {
+export function WishlistButton({ productId, productName, className }: WishlistButtonProps) {
   const { toggleWishlist, isWishlisted } = useWishlist();
+  const { showToast } = useToast();
   const wishlisted = isWishlisted(productId);
   const [animating, setAnimating] = useState(false);
 
@@ -20,6 +23,11 @@ export function WishlistButton({ productId, className }: WishlistButtonProps) {
     e.stopPropagation();
     setAnimating(true);
     toggleWishlist(productId);
+    const label = productName ? `: ${productName}` : "";
+    showToast(
+      wishlisted ? `Removed from wishlist${label}` : `Saved to wishlist${label}`,
+      "wishlist"
+    );
     setTimeout(() => setAnimating(false), 300);
   }
 
