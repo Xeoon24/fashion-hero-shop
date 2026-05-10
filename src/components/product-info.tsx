@@ -60,6 +60,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [added, setAdded] = useState(false);
   const addToCartButtonRef = useRef<HTMLButtonElement>(null);
   const { addItem } = useCart();
 
@@ -91,8 +92,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
     : "mens";
 
   function handleAddToCart() {
-    if (!selectedSize) return;
+    if (!selectedSize || added) return;
     addItem(product, selectedColor, selectedSize);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
   }
 
   return (
@@ -182,10 +185,19 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <button
         ref={addToCartButtonRef}
         onClick={handleAddToCart}
-        disabled={!selectedSize}
-        className="w-full py-4 bg-charcoal text-white text-[12px] font-medium uppercase tracking-[0.6px] rounded-full hover:bg-charcoal-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={!selectedSize || added}
+        className={cn(
+          "w-full py-4 text-white text-[12px] font-medium uppercase tracking-[0.6px] rounded-full transition-colors duration-200 disabled:cursor-not-allowed",
+          added
+            ? "bg-green-700"
+            : "bg-charcoal hover:bg-charcoal-light disabled:opacity-40"
+        )}
       >
-        {selectedSize ? "ADD TO CART - " + product.price + " zl" : "SELECT A SIZE"}
+        {added
+          ? "ADDED TO CART ✓"
+          : selectedSize
+          ? "ADD TO CART - " + product.price + " zl"
+          : "SELECT A SIZE"}
       </button>
 
       {/* Shipping info */}
@@ -217,10 +229,15 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
         <button
           onClick={handleAddToCart}
-          disabled={!selectedSize}
-          className="flex-shrink-0 px-5 py-2.5 bg-charcoal text-white text-[11px] font-medium uppercase tracking-[0.6px] rounded-full hover:bg-charcoal-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+          disabled={!selectedSize || added}
+          className={cn(
+            "flex-shrink-0 px-5 py-2.5 text-white text-[11px] font-medium uppercase tracking-[0.6px] rounded-full transition-colors duration-200 disabled:cursor-not-allowed whitespace-nowrap",
+            added
+              ? "bg-green-700"
+              : "bg-charcoal hover:bg-charcoal-light disabled:opacity-40"
+          )}
         >
-          {selectedSize ? "Add to Cart" : "Select Size"}
+          {added ? "Added ✓" : selectedSize ? "Add to Cart" : "Select Size"}
         </button>
       </div>
     </div>

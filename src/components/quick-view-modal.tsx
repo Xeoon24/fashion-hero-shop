@@ -8,6 +8,7 @@ import { CloseIcon } from "./icons";
 import { ColorSwatches } from "./color-swatches";
 import { SizeSelector } from "./size-selector";
 import { useCart } from "./cart-provider";
+import { cn } from "@/lib/utils";
 
 interface QuickViewModalProps {
   product: Product;
@@ -21,6 +22,7 @@ function productGradient(hex: string): string {
 export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   const [selectedColor, setSelectedColor] = useState<ProductColor>(product.colors[0]);
   const [selectedSize, setSelectedSize] = useState<number | null>(null);
+  const [added, setAdded] = useState(false);
   const { addItem } = useCart();
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -41,9 +43,10 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   }, [onClose]);
 
   function handleAddToCart() {
-    if (!selectedSize) return;
+    if (!selectedSize || added) return;
     addItem(product, selectedColor, selectedSize);
-    onClose();
+    setAdded(true);
+    setTimeout(onClose, 700);
   }
 
   const imageSrc = selectedColor.image;
@@ -134,10 +137,19 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
 
             <button
               onClick={handleAddToCart}
-              disabled={!selectedSize}
-              className="w-full py-3.5 bg-charcoal text-white text-[12px] font-medium uppercase tracking-[0.6px] rounded-full hover:bg-charcoal-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={!selectedSize || added}
+              className={cn(
+                "w-full py-3.5 text-white text-[12px] font-medium uppercase tracking-[0.6px] rounded-full transition-colors duration-200 disabled:cursor-not-allowed",
+                added
+                  ? "bg-green-700"
+                  : "bg-charcoal hover:bg-charcoal-light disabled:opacity-40"
+              )}
             >
-              {selectedSize ? "ADD TO CART - " + product.price + " zl" : "SELECT A SIZE"}
+              {added
+                ? "ADDED TO CART ✓"
+                : selectedSize
+                ? "ADD TO CART - " + product.price + " zl"
+                : "SELECT A SIZE"}
             </button>
 
             <Link
